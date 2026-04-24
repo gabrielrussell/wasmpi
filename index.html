@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>π</title>
+<style>
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         margin: 2em; color: #222; }
+  #out { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div id="out">loading…</div>
+<script src="https://cdn.jsdelivr.net/npm/gmp-wasm"></script>
+<script>
+const A = 13591409, B = 545140134, C3_OVER_24 = '10939058860032000';
+
+function bs(g, a, b, c) {
+    if (b - a === 1) {
+        const P = g.Integer(6*a - 5).mul(2*a - 1).mul(6*a - 1).neg();
+        const Q = c.mul(a).mul(a).mul(a);
+        const T = g.Integer(B).mul(a).add(A).mul(P);
+        return [P, Q, T];
+    }
+    const m = (a + b) >> 1;
+    const [P1, Q1, T1] = bs(g, a, m, c);
+    const [P2, Q2, T2] = bs(g, m, b, c);
+    return [P1.mul(P2), Q1.mul(Q2), T1.mul(Q2).add(T2.mul(P1))];
+}
+
+function computePi(ready, n) {
+    const N = Math.floor(n / 14) + 8;
+    const precisionBits = Math.ceil(n * 3.3219280948873626 + 64);
+    const raw = ready.calculate((g) => {
+        const c = g.Integer(C3_OVER_24);
+        const [P, Q, T] = bs(g, 1, N + 1, c);
+        const num = g.Float(Q.mul(426880));
+        const den = g.Float(Q.mul(A).add(T));
+        return num.mul(g.Float(10005).sqrt()).div(den).toString();
+    }, { precisionBits });
+    return raw.slice(0, n + 2);
+}
+
+function formatBlocks(s) {
+    const digits = s.slice(2);
+    const groups = [];
+    for (let i = 0; i < digits.length; i += 50) groups.push(digits.slice(i, i + 50));
+    return '3.\n' + groups.join(' ') + '\n';
+}
+
+const out = document.getElementById('out');
+const n = Math.max(1, parseInt(new URLSearchParams(location.search).get('n') || '1000', 10));
+
+gmp.init().then((ready) => {
+    out.textContent = `computing ${n.toLocaleString()} digits…`;
+    setTimeout(() => {
+        const t0 = performance.now();
+        out.textContent = formatBlocks(computePi(ready, n));
+        document.title = `π (${n.toLocaleString()} digits, ${(performance.now() - t0).toFixed(0)} ms)`;
+    }, 20);
+}).catch((e) => { out.textContent = 'WASM init failed: ' + e.message; });
+</script>
+</body>
+</html>
