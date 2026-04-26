@@ -13,6 +13,11 @@
 <div id="out">loading…</div>
 <script src="https://cdn.jsdelivr.net/npm/gmp-wasm"></script>
 <script>
+// Chudnovsky algorithm with binary splitting.
+// Chudnovsky & Chudnovsky, "Approximations and complex multiplication
+//   according to Ramanujan", in Ramanujan Revisited (1988), pp. 375-472.
+// Binary splitting: Haible & Papanikolaou, "Fast multiprecision evaluation
+//   of series of rational numbers", ANTS-III, LNCS 1423 (1998), pp. 338-350.
 const A = 13591409, B = 545140134, C3_OVER_24 = '10939058860032000';
 
 function bs(g, a, b, c) {
